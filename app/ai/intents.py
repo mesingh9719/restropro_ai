@@ -33,7 +33,7 @@ INTENTS: dict[str, IntentSpec] = {
     "menu.item.delete": IntentSpec("menu", "delete", True),
     "ingredient.create": IntentSpec("inventory", "create", True),
     "recipe.create": IntentSpec("recipes", "create", True),
-    "inventory.command": IntentSpec("inventory", "follow_up"),
+    "inventory.command": IntentSpec("inventory", "update", True),
     "assistant.clarify": IntentSpec("other", "clarification"),
     "assistant.confirm": IntentSpec("other", "confirmation"),
     "assistant.cancel": IntentSpec("other", "cancel"),
