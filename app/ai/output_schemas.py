@@ -1,6 +1,14 @@
 """Provider-compatible strict JSON schemas for typed AI results."""
 
 OUTPUT_SCHEMAS = {
+    "RecipeReadIntent": {
+        "type": "object", "additionalProperties": False,
+        "properties": {
+            "intent": {"type": "string", "enum": ["get_recipe", "get_ingredients", "ingredient_usage", "get_recipe_cost", "list_recipes", "unknown"]},
+            "entity": {"type": ["string", "null"]},
+        },
+        "required": ["intent", "entity"],
+    },
     "AssistantDecision": {
         "type": "object", "additionalProperties": False,
         "properties": {

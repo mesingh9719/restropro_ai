@@ -166,3 +166,12 @@ class MatchCandidate(BaseModel):
 class MatchSuggestions(BaseModel):
     model_config = ConfigDict(extra="forbid")
     matches: list[MatchCandidate] = Field(max_length=30)
+
+class RecipeReadRequest(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    message: str = Field(min_length=1, max_length=1000)
+
+class RecipeReadIntent(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+    intent: Literal['get_recipe', 'get_ingredients', 'ingredient_usage', 'get_recipe_cost', 'list_recipes', 'unknown']
+    entity: str | None = Field(default=None, max_length=255)

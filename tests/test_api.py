@@ -110,3 +110,27 @@ class MalformedTokenTests(unittest.TestCase):
             with self.assertRaises(HTTPException) as raised:
                 authorize('Bearer café')
         self.assertEqual(raised.exception.status_code, 401)
+
+class RecipeReadContractTests(unittest.TestCase):
+    setUp = ApiContractTests.setUp
+    tearDown = ApiContractTests.tearDown
+    def test_read_classifier_has_only_intent_and_entity(self):
+        from app.schemas.operations import RecipeReadIntent
+        with patch('app.api.routes.operations.complete', new_callable=AsyncMock, return_value=RecipeReadIntent(intent='get_recipe', entity='Dal Tadka')):
+            response = self.client.post('/internal/ai/recipe/interpret', json={'message': 'tell me the saved recipe for dal'}, headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {'intent': 'get_recipe', 'entity': 'Dal Tadka'})
+
+    def test_read_classifier_retries_a_malformed_result_once(self):
+        from fastapi import HTTPException
+        from app.schemas.operations import RecipeReadIntent
+        with patch('app.api.routes.operations.complete', new_callable=AsyncMock, side_effect=[HTTPException(status_code=502, detail='AI returned an unusable draft'), RecipeReadIntent(intent='get_ingredients', entity='Dal')]) as provider:
+            response = self.client.post('/internal/ai/recipe/interpret', json={'message': 'ingredients of Dal'}, headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(provider.await_count, 2)
+
+    def test_read_classifier_requires_service_auth_and_rejects_extra_fields(self):
+        with patch('app.api.routes.operations.complete', new_callable=AsyncMock) as provider:
+            self.assertEqual(self.client.post('/internal/ai/recipe/interpret', json={'message': 'recipe of Dal'}).status_code, 401)
+            self.assertEqual(self.client.post('/internal/ai/recipe/interpret', json={'message': 'recipe of Dal', 'business_id': 'untrusted'}, headers=self.headers).status_code, 422)
+        provider.assert_not_called()

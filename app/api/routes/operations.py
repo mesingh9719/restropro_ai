@@ -41,3 +41,21 @@ async def interpret_command(request: CommandRequest, x_request_id: str | None = 
 async def match_ingredients(request: MatchRequest, x_request_id: str | None = Header(default=None)):
     system = PROMPTS["ingredient.match"]
     return await complete("ingredient.match", system, request.model_dump(), MatchSuggestions, x_request_id)
+
+from app.schemas.operations import RecipeReadRequest, RecipeReadIntent
+
+@router.post('/internal/ai/recipe/interpret', response_model=RecipeReadIntent, dependencies=[Depends(authorize)])
+async def interpret_recipe_read(request: RecipeReadRequest, x_request_id: str | None = Header(default=None)):
+    # Classification only. No restaurant records or data access are provided to the model.
+    system = ('Classify this saved recipe read request as get_recipe, get_ingredients, ingredient_usage '
+              '(dishes using an ingredient), get_recipe_cost, list_recipes, or unknown. '
+              'Extract only the stated dish or ingredient name into entity. Support Hinglish and typos. '
+              'Create, edit, delete, and generated recipe requests are unknown. Never return ingredients, '
+              'instructions, quantities, costs, IDs, or SQL. Return exactly {intent, entity}.')
+    from fastapi import HTTPException
+    for attempt in range(2):
+        try:
+            return await complete('recipe.interpret', system, request.model_dump(), RecipeReadIntent, x_request_id)
+        except HTTPException as error:
+            if attempt or error.status_code != 502 or error.detail != 'AI returned an unusable draft':
+                raise
