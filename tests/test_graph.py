@@ -121,3 +121,10 @@ class SchemaContractTests(unittest.TestCase):
                 self.assertEqual(set(schema["required"]), set(model.model_fields))
         self.assertEqual(set(OUTPUT_SCHEMAS["AssistantDecision"]["properties"]["intent"]["enum"]), set(INTENTS))
         self.assertEqual(set(OUTPUT_SCHEMAS["AssistantDecision"]["properties"]["requested_action"]["enum"]), set(get_args(RequestedAction)))
+
+class RefinedCapabilityTests(unittest.IsolatedAsyncioTestCase):
+    async def test_refined_schedule_intent_requires_its_own_advertised_capability(self):
+        parsed = decision('menu.item.availability', schedule_name='Dinner', requested_action='update')
+        with patch('app.ai.assistant_graph.complete', new_callable=AsyncMock, return_value=parsed):
+            result = await interpret_turn(turn('make it available for Dinner', available_actions=['menu.item.availability']), 'refine-permission')
+        self.assertEqual(result.intent, 'assistant.other')

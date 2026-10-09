@@ -114,6 +114,7 @@ builder.add_node("detect_explicit_menu_create", detect_explicit_menu_create)
 builder.add_node("classify", classify)
 builder.add_node("validate_decision", validate_decision)
 builder.add_node("menu", refine_menu)
+builder.add_node("revalidate_decision", validate_decision)
 for branch in ("module", "conversation"):
     builder.add_node(branch, finish)
 builder.add_edge(START, "normalize_request")
@@ -122,7 +123,9 @@ builder.add_edge("detect_control", "detect_explicit_menu_create")
 builder.add_edge("detect_explicit_menu_create", "classify")
 builder.add_edge("classify", "validate_decision")
 builder.add_conditional_edges("validate_decision", route, {branch: branch for branch in ("menu", "module", "conversation")})
-for branch in ("menu", "module", "conversation"):
+builder.add_edge("menu", "revalidate_decision")
+builder.add_edge("revalidate_decision", END)
+for branch in ("module", "conversation"):
     builder.add_edge(branch, END)
 assistant_graph = builder.compile()
 

@@ -101,3 +101,12 @@ class ApiContractTests(unittest.TestCase):
         response = self.client.get("/health")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json(), {"status": "ok"})
+
+class MalformedTokenTests(unittest.TestCase):
+    def test_non_ascii_service_token_is_rejected_without_a_server_error(self):
+        from app.core.security import authorize
+        from fastapi import HTTPException
+        with patch.dict(os.environ, {'INTERNAL_AI_SERVICE_TOKEN': 'test-token'}):
+            with self.assertRaises(HTTPException) as raised:
+                authorize('Bearer café')
+        self.assertEqual(raised.exception.status_code, 401)
